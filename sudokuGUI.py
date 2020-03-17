@@ -5,11 +5,12 @@ class Sudoku:
     def __init__(self):
         #----WINDOW----
         self.window = tk.Tk()
-        self.window.geometry("600x400")
+        self.window.geometry("700x400")
         for i in range(3):
             self.window.grid_columnconfigure(i,weight = 1)
             self.window.grid_rowconfigure(i,weight = 1)
-        self.window.grid_rowconfigure(3,weight = 1)
+        self.window.grid_columnconfigure(3,weight = 2)
+        
 
         #----MAIN FRAMES : the big squares----
         self.mainFrames = []
@@ -49,29 +50,57 @@ class Sudoku:
                 else:
                     iColumn+=1
 
-        #----BUTTON SOLVE,VERIFY----
-        self.menuFrame = tk.Frame(self.window,bg = 'lightgrey')
-        self.menuFrame.grid(row = 3,sticky = 'WESN',columnspan = 3)
-        self.menuFrame.grid_rowconfigure(0,weight=1)
-        for i in range(2):
-            self.menuFrame.grid_columnconfigure(i,weight=1)
-        self.buttonVerify = tk.Button(self.menuFrame,text='VERIFY')
-        self.buttonVerify.grid(row=0,column=0,sticky = 'WESN')
-        self.buttonSolve = tk.Button(self.menuFrame,text='SOLVE')
-        self.buttonSolve.grid(row=0,column=1,sticky='WESN')
+        #----BUTTON SOLVE, GENERATE, CLEAR----
+        self.menuFrame = tk.Frame(self.window,bg = 'dark sea green')
+        self.menuFrame.grid(row = 0,rowspan = 3,column = 3,sticky = 'WESN')
+        for i in range(3):
+            self.menuFrame.grid_rowconfigure(i,weight=1)
+        self.menuFrame.grid_columnconfigure(0,weight=1)
+        self.images = {}
+        self.images['solve'] = tk.PhotoImage(file='solveButton.gif')
+        self.images['generate'] = tk.PhotoImage(file='generateButton.gif')
+        self.images['clear'] = tk.PhotoImage(file='clearButton.gif')
 
+        self.buttonSolve = tk.Button(self.menuFrame,image = self.images['solve'],bd=1,activebackground= 'dark sea green', relief=tk.FLAT,bg='dark sea green')
+        self.buttonSolve.grid(row=0)
 
-    def setBox(self,indexI,indexJ,nb):
-        part,index = self.translateCoordinates(indexI,indexJ)
-        self.numbers[part][index]['text'] = str(nb) 
+        self.generateFrame = tk.Frame(self.menuFrame,bg = 'dark sea green')
+        self.generateFrame.grid(row = 1,sticky = 'WESN')
+        self.buttonGenerate = tk.Button(self.generateFrame,image = self.images['generate'],bd=1,activebackground= 'dark sea green', relief=tk.FLAT,bg='dark sea green')
+        self.buttonGenerate.grid(column=0)
 
-    def setBoxBg(self,indexI,indexJ,color):
-        part,index = self.translateCoordinates(indexI,indexJ)
-        self.numbers[part][index]['bg'] = color 
-    
-    def setBoxFg(self,indexI,indexJ,color):
-        part,index = self.translateCoordinates(indexI,indexJ)
-        self.numbers[part][index]['fg'] = color 
+        self.buttonClear = tk.Button(self.menuFrame,image = self.images['clear'],bd=1,activebackground= 'dark sea green', relief=tk.FLAT,bg='dark sea green')
+        self.buttonClear.grid(row = 2)
+
+        #----DIFFICULTY---
+        self.difficultyFrame = tk.Frame(self.generateFrame,bg = 'dark sea green')
+        self.difficultyFrame.grid(row = 0,column = 1,sticky = 'WESN')
+        for i in range(5):
+            self.difficultyFrame.rowconfigure(i,weight = 1)
+        self.buttonDifficulty = []
+        index = 0
+        for i in ['veryeasy','easy','normal','hard','veryhard']:
+            self.images['button'+i] = tk.PhotoImage(file=i+'.gif')
+            self.buttonDifficulty.append(tk.Button(self.difficultyFrame,image = self.images['button'+i],bg = 'dark sea green',relief=tk.FLAT,activebackground= 'dark sea green'))
+            self.buttonDifficulty[index].grid(row = index)
+            index+=1
+
+    def __setitem__(self,index,value):
+        if isinstance(index,str):
+            type = index 
+            for i in range(9):
+                for j in range(9):
+                    x,y = self.translateCoordinates(i,j)
+                    self.numbers[x][y][type] = value[i*9+j]
+        else:
+            i,j = self.translateCoordinates(index[0],index[1])
+            type = index[2]
+            self.numbers[i][j][type] = value
+
+    def __getitem__(self,index):
+        i,j = self.translateCoordinates(index[0],index[1])
+        type = index[2]
+        return self.numbers[i][j][type] 
 
     def translateCoordinates(self,indexI,indexJ):
         partI = 0 if indexI<=2 else 1 if indexI<=5 else 2
@@ -80,15 +109,15 @@ class Sudoku:
         index = indexJ%3 + indexI%3*3
         return part,index
 
-    def display(self,grid):
+    def clearBg(self,color = 'white'):
         for i in range(9):
             for j in range(9):
-                self.setBox(i,j,grid[i][j])
+                self.numbers[i][j].config(bg = color)
 
-    def clearBg(self):
+    def clearFg(self,color = 'black'):
         for i in range(9):
             for j in range(9):
-                self.numbers[i][j].config(bg = 'white')
+                self.numbers[i][j].config(fg = color)
 
     def start(self):
         self.window.mainloop()

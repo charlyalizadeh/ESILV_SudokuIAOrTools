@@ -1,53 +1,70 @@
 from ortools.sat.python import cp_model
 import random
-try:
-    import sudokuGUI
-except ImportError:
-    print("Can't display GUI, sudokuGUI module not find")
+import sudokuGUI
+
 
 class SudokuSolver:
-    def __init__(self,nbStartValues = 13): 
+    def __init__(self,nbStartValues = 33): 
         #----GUI SETUP------
         self.gui = sudokuGUI.Sudoku()
         self.gui.window.bind('<KeyPress>',self.action)
-        self.currentSelect = [0,0]
+        self.select = [0,0]
         self.gui.buttonSolve['command'] = self.solve
+        self.gui.buttonClear['command'] = self.clear
+        self.gui.buttonGenerate['command'] = self.generateGame
+        self.gridBgColors = ['white' for i in range(81)]
+        for i in range(5):
+            self.gui.buttonDifficulty[i]['command'] = lambda index=i:self.changeDifficulty(index)
+
+        
 
 
-
-        self.model = cp_model.CpModel()
+        self.model = None
         self.nbStartValues = nbStartValues
         self.grid = []#The list which contains our NewIntVar for ortools
         self.gridSoluce = [' ' for i in range(81)]#The list which contains the values of our sudoku
+        self.error = []
         self.initialCoord = []#The list wich contains the coordinates of the inital values
 
 
-   #----GUI FUNCTIONS----    
-
+#----GUI FUNCTIONS----    
     def action(self,evt):
         if evt.keysym=='Up':
-            self.currentSelect[0] = 8 if self.currentSelect[0]==0 else self.currentSelect[0]-1
+            self.select[0] = 8 if self.select[0]==0 else self.select[0]-1
         if evt.keysym=='Down':
-            self.currentSelect[0] = 0 if self.currentSelect[0]==8 else self.currentSelect[0]+1
+            self.select[0] = 0 if self.select[0]==8 else self.select[0]+1
         if evt.keysym=='Left':
-            self.currentSelect[1] = 8 if self.currentSelect[1]==0 else self.currentSelect[1]-1
+            self.select[1] = 8 if self.select[1]==0 else self.select[1]-1
         if evt.keysym=='Right':
-            self.currentSelect[1] = 0 if self.currentSelect[1]==8 else self.currentSelect[1]+1
-        if evt.char.isdigit() and self.currentSelect not in self.initialCoord:
-            self.gridSoluce[self.currentSelect[0]*9+self.currentSelect[1]] = int(evt.char)
+            self.select[1] = 0 if self.select[1]==8 else self.select[1]+1
+        if evt.char.isdigit()  and self.select not in self.initialCoord:
+            if int(evt.char)==0:
+                self.gridSoluce[self.select[0]*9+self.select[1]] = ' '
+            else:
+                self.gridSoluce[self.select[0]*9+self.select[1]] = int(evt.char)
+        self.verify()
         self.updateDisplay()
         
     def updateDisplay(self):
+        #----CLEAR----
         self.gui.clearBg()
-        self.gui.setBoxBg(self.currentSelect[0],self.currentSelect[1],'lightgrey')
-        self.displaygridGUI(self.gridSoluce)
+        self.gridBgColors = ['white' for i in range(81)]
 
-    def displaygridGUI(self,grid):
-        existIndex = [(i,j) for i in range(9) for j in range(9) if self.gridSoluce[i*9+j]!= ' ']
-        for coord in existIndex:
-            self.gui.setBox(coord[0],coord[1],grid[coord[0]*9+coord[1]])
-        self.gui.window.update()
+        #----DISPLAY ERROR & SELECTION----
+        for coord in self.error:
+            self.gridBgColors[coord[0]*9+coord[1]] = 'FireBrick1'#Error
+        if(tuple(self.select) in self.error):
+            self.gridBgColors[self.select[0]*9 + self.select[1]] = 'FireBrick3'#Error + Select
+        else:
+            self.gridBgColors[self.select[0]*9 + self.select[1]] = 'lightgrey'#Select
 
+        #----DISLPAY INITIAL VALUES----
+        for coord in self.initialCoord:
+            self.gui[coord[0],coord[1],'fg'] = 'SpringGreen4'
+        self.gui['bg'] = self.gridBgColors
+        self.gui['text'] = self.gridSoluce
+        self.displaygridTerminal(self.gridSoluce)
+    
     def displaygridTerminal(self,grid):
         strStart = '┏━━━┯━━━┯━━━┳━━━┯━━━┯━━━┳━━━┯━━━┯━━━┓\n'
         for i in range(9):
@@ -67,11 +84,11 @@ class SudokuSolver:
         strStart += '┗━━━┷━━━┷━━━┻━━━┷━━━┷━━━┻━━━┷━━━┷━━━┛\n'
         print(strStart)
 
-#----GENERATION OF THE SUDOKU----
-    def isValidValue(self,coord,value):
-        if self.gridSoluce[coord[0]*9+coord[1]]!=' ':#if coord is already assigned
+#----GENERATION, VERIFICATION, AND RESOLUTION OF THE SUDOKU----
+    def isValidValue(self,coord,value,checkSameCoordinates = True):
+        if checkSameCoordinates and self.gridSoluce[coord[0]*9+coord[1]]!=' ':#if coord is already assigned
             return False
-        existingIndex = [(i,j) for i in range(9) for j in range(9) if self.gridSoluce[i*9+j]!= ' ']
+        existingIndex = [(i,j) for i in range(9) for j in range(9) if self.gridSoluce[i*9+j]!= ' ' and (i,j)!=coord]
         for c in existingIndex:
             if value == self.gridSoluce[c[0]*9+c[1]] and (c[0]==coord[0] or c[1]==coord[1]):#if there is already a value equal to 'value' in the same row or column
                 return False
@@ -94,6 +111,7 @@ class SudokuSolver:
             self.gridSoluce[c[0]*9+c[1]] = value
 
     def createConstraint(self):
+        self.model = cp_model.CpModel()
         #Variables
         self.grid = [[self.model.NewIntVar(1,9,f'[{i},{j}]') for j in range(0,9)] for i in range(0,9)]
         column =  [[self.grid[i][j] for i in range(0,9)] for j in range(0,9)]
@@ -121,7 +139,9 @@ class SudokuSolver:
             self.model.AddAllDifferent(b)
 
     def solve(self,display = True):
+        print(self.grid)
         self.createConstraint()
+        print(self.grid)
         solver = cp_model.CpSolver()
         status = solver.Solve(self.model)
         if status == cp_model.FEASIBLE:
@@ -134,26 +154,66 @@ class SudokuSolver:
         else:
             print('Not solvable')
  
+    def verify(self):
+        self.error = []
+        for i in range(9):
+            for j in range(9):
+                if self.gridSoluce[i*9+j]==' ':
+                    continue
+                isValid = self.isValidValue((i,j),self.gridSoluce[i*9+j],False)
+                if not isValid:
+                    self.error.append((i,j))
+    
+    def clearAll(self):
+        self.error = []
+        self.initialCoord = []
+        self.gridSoluce = [' ' for i in range(81)]
+        self.grid = []
+        self.gridBgColors = [' ' for i in range(81)]
+        self.gui.clearFg()
+
+    def clear(self):
+        for i in range(9):
+            for j in range(9):
+                if [i,j] not in self.initialCoord:
+                    self.gridSoluce[i*9+j] = ' '
+        self.verify()
+        self.updateDisplay()
+
+    def changeDifficulty(self,index):
+        if index==0:
+            self.nbStartValues = 50
+        elif index==1:
+            self.nbStartValues = 40
+        elif index==2:
+            self.nbStartValues = 33
+        elif index==3:
+            self.nbStartValues = 26
+        elif index==4:
+            self.nbStartValues = 17
+        for i in range(5):
+            if index==i:
+                self.gui.buttonDifficulty[i]['bg'] = 'dark green'
+            else:
+                self.gui.buttonDifficulty[i]['bg'] = 'dark sea green'
+
     def generateGame(self):
+        self.clearAll()
         self.generate(6)
-        self.solve(False   )
-        #self.displaygridTerminal(self.gridSoluce)
-        while sum(1 for i in range(81) if self.gridSoluce[i]!=' ')>self.nbStartValues:
-            index = random.randint(0,80)
-            self.gridSoluce[index] = ' '
-            
-        self.initialCoord = [[int(i/9),i-int(i/9)*9] for i in range(81) if self.gridSoluce[i]!=' ']
-        for coord in self.initialCoord:
-            self.gui.setBoxFg(coord[0],coord[1],'red')
+        self.solve(False)
         self.displaygridTerminal(self.gridSoluce)
-        self.displaygridGUI(self.gridSoluce)
+        while sum(1 for i in range(81) if self.gridSoluce[i]!=' ')>self.nbStartValues: 
+            index = random.randint(0,80)
+            self.gridSoluce[index] = ' '       
+        self.initialCoord = [[int(i/9),i-int(i/9)*9] for i in range(81) if self.gridSoluce[i]!=' ']
+        self.updateDisplay()   
 
     def play(self):
         self.generateGame()
-        self.gui.window.mainloop()
+        self.gui.start()
 
 
-sudoSolver = SudokuSolver(20)
+sudoSolver = SudokuSolver()
 sudoSolver.play()
 
 
