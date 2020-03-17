@@ -57,9 +57,9 @@ class Sudoku:
             self.menuFrame.grid_rowconfigure(i,weight=1)
         self.menuFrame.grid_columnconfigure(0,weight=1)
         self.images = {}
-        self.images['solve'] = tk.PhotoImage(file='solveButton.gif')
-        self.images['generate'] = tk.PhotoImage(file='generateButton.gif')
-        self.images['clear'] = tk.PhotoImage(file='clearButton.gif')
+        self.images['solve'] = tk.PhotoImage(file='image/solveButton.gif')
+        self.images['generate'] = tk.PhotoImage(file='image/generateButton.gif')
+        self.images['clear'] = tk.PhotoImage(file='image/clearButton.gif')
 
         self.buttonSolve = tk.Button(self.menuFrame,image = self.images['solve'],bd=1,activebackground= 'dark sea green', relief=tk.FLAT,bg='dark sea green')
         self.buttonSolve.grid(row=0)
@@ -80,7 +80,7 @@ class Sudoku:
         self.buttonDifficulty = []
         index = 0
         for i in ['veryeasy','easy','normal','hard','veryhard']:
-            self.images['button'+i] = tk.PhotoImage(file=i+'.gif')
+            self.images['button'+i] = tk.PhotoImage(file='image/'+i+'.gif')
             self.buttonDifficulty.append(tk.Button(self.difficultyFrame,image = self.images['button'+i],bg = 'dark sea green',relief=tk.FLAT,activebackground= 'dark sea green'))
             self.buttonDifficulty[index].grid(row = index)
             index+=1
