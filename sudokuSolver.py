@@ -193,9 +193,9 @@ class SudokuSolver:
             self.nbStartValues = 17
         for i in range(5):
             if index==i:
-                self.gui.buttonDifficulty[i]['bg'] = 'dark green'
+                self.gui.buttonDifficulty[i]['bg'] = 'dark grey'
             else:
-                self.gui.buttonDifficulty[i]['bg'] = 'dark sea green'
+                self.gui.buttonDifficulty[i]['bg'] = 'black'
 
     def generateGame(self):
         self.clearAll()

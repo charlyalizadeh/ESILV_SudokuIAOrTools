@@ -49,39 +49,35 @@ class Sudoku:
                     iRow+=1
                 else:
                     iColumn+=1
-
+        fontStyle = tkFont.Font(family="Lucida Grande", size=12)
         #----BUTTON SOLVE, GENERATE, CLEAR----
-        self.menuFrame = tk.Frame(self.window,bg = 'dark sea green')
+        self.menuFrame = tk.Frame(self.window,bg = 'black')
         self.menuFrame.grid(row = 0,rowspan = 3,column = 3,sticky = 'WESN')
         for i in range(3):
             self.menuFrame.grid_rowconfigure(i,weight=1)
         self.menuFrame.grid_columnconfigure(0,weight=1)
-        self.images = {}
-        self.images['solve'] = tk.PhotoImage(file='image/solveButton.gif')
-        self.images['generate'] = tk.PhotoImage(file='image/generateButton.gif')
-        self.images['clear'] = tk.PhotoImage(file='image/clearButton.gif')
 
-        self.buttonSolve = tk.Button(self.menuFrame,image = self.images['solve'],bd=1,activebackground= 'dark sea green', relief=tk.FLAT,bg='dark sea green')
+        self.buttonSolve = tk.Button(self.menuFrame,text = 'SOLVE',  font = fontStyle,fg = 'white',bd=1,activebackground= 'black', relief=tk.FLAT,bg='black')
         self.buttonSolve.grid(row=0)
 
-        self.generateFrame = tk.Frame(self.menuFrame,bg = 'dark sea green')
+        self.generateFrame = tk.Frame(self.menuFrame,bg = 'black')
         self.generateFrame.grid(row = 1,sticky = 'WESN')
-        self.buttonGenerate = tk.Button(self.generateFrame,image = self.images['generate'],bd=1,activebackground= 'dark sea green', relief=tk.FLAT,bg='dark sea green')
+        self.buttonGenerate = tk.Button(self.generateFrame,text = 'GENERATE', font = fontStyle,fg = 'white',bd=1,activebackground= 'black', relief=tk.FLAT,bg='black')
         self.buttonGenerate.grid(column=0)
 
-        self.buttonClear = tk.Button(self.menuFrame,image = self.images['clear'],bd=1,activebackground= 'dark sea green', relief=tk.FLAT,bg='dark sea green')
+        self.buttonClear = tk.Button(self.menuFrame,bd=1,text = 'CLEAR',  font = fontStyle,justify = 'center',fg = 'white',activebackground= 'black', relief=tk.FLAT,bg='black')
         self.buttonClear.grid(row = 2)
 
         #----DIFFICULTY---
-        self.difficultyFrame = tk.Frame(self.generateFrame,bg = 'dark sea green')
+        self.difficultyFrame = tk.Frame(self.generateFrame,bg = 'black')
         self.difficultyFrame.grid(row = 0,column = 1,sticky = 'WESN')
         for i in range(5):
             self.difficultyFrame.rowconfigure(i,weight = 1)
         self.buttonDifficulty = []
         index = 0
-        for i in ['veryeasy','easy','normal','hard','veryhard']:
-            self.images['button'+i] = tk.PhotoImage(file='image/'+i+'.gif')
-            self.buttonDifficulty.append(tk.Button(self.difficultyFrame,image = self.images['button'+i],bg = 'dark sea green',relief=tk.FLAT,activebackground= 'dark sea green'))
+        for i in ['VERY EASY','EASY','NORMAL','HARD','VERY HARD']:
+            #self.images['button'+i] = tk.PhotoImage(file='image/'+i+'.gif')
+            self.buttonDifficulty.append(tk.Button(self.difficultyFrame,text = i, fg = 'white', font = fontStyle,bg = 'black',relief=tk.FLAT,activebackground= 'black'))
             self.buttonDifficulty[index].grid(row = index)
             index+=1
 
